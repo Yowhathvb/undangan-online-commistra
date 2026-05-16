@@ -23,13 +23,6 @@
       box-sizing: border-box;
     }
 
-    @media print {
-  * {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-}
-
     :root {
       --nu-green: #0B6B3A;
       --nu-green-2: #0F7A42;
@@ -684,6 +677,36 @@
         animation: none;
       }
     }
+
+    @media print {
+
+  body {
+    background: white !important;
+  }
+
+  .topbar,
+  .wa-fab,
+  #download,
+  .toast,
+  nav,
+  .pattern-mosques {
+    display: none !important;
+  }
+
+  .sheet {
+    box-shadow: none !important;
+    border: none !important;
+    background: white !important;
+  }
+
+  * {
+    animation: none !important;
+    transition: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+}
   </style>
 </head>
 <body>
@@ -874,8 +897,6 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
 <script>
 (function () {
 
@@ -886,6 +907,7 @@
   const anchorLinks = document.querySelectorAll('a[href^="#"]');
 
   for (let i = 0; i < anchorLinks.length; i++) {
+
     anchorLinks[i].addEventListener('click', function (e) {
 
       const hash = this.getAttribute('href');
@@ -895,6 +917,7 @@
       const targetElem = document.querySelector(hash);
 
       if (targetElem) {
+
         e.preventDefault();
 
         targetElem.scrollIntoView({
@@ -903,21 +926,30 @@
         });
 
         history.pushState(null, '', hash);
+
       }
+
     });
+
   }
 
   if (window.location.hash) {
+
     const target = document.querySelector(window.location.hash);
 
     if (target) {
+
       setTimeout(() => {
+
         target.scrollIntoView({
           behavior: 'smooth',
           block: 'start'
         });
+
       }, 100);
+
     }
+
   }
 
 
@@ -932,168 +964,89 @@
     if (!toast) return;
 
     toast.textContent = msg;
+
     toast.classList.add('show');
 
     clearTimeout(window._toastTimer);
 
     window._toastTimer = setTimeout(() => {
+
       toast.classList.remove('show');
+
     }, 2500);
+
   }
 
 
   // =========================
-  // WAIT IMAGES
-  // =========================
-
-  async function waitImages(container) {
-
-    const images = container.querySelectorAll('img');
-
-    await Promise.all(
-      [...images].map((img) => {
-
-        return new Promise((resolve) => {
-
-          if (img.complete) {
-            resolve();
-          } else {
-            img.onload = resolve;
-            img.onerror = resolve;
-          }
-
-        });
-
-      })
-    );
-  }
-
-
-  // =========================
-  // PDF DOWNLOAD
+  // DOWNLOAD PDF
   // =========================
 
   const downloadBtn = document.getElementById('btnDownloadPdf');
-  const invite = document.getElementById('invite');
 
-  if (downloadBtn && invite) {
+  if (downloadBtn) {
 
     downloadBtn.addEventListener('click', async () => {
-
-      let wrapper = null;
 
       try {
 
         downloadBtn.disabled = true;
+
         downloadBtn.setAttribute('aria-busy', 'true');
 
-        showToast('Sedang membuat PDF...');
+        showToast('Mempersiapkan PDF...');
 
-        // tunggu font selesai load
+        // tunggu semua gambar selesai load
+        const images = document.querySelectorAll('img');
+
+        await Promise.all(
+
+          [...images].map((img) => {
+
+            return new Promise((resolve) => {
+
+              if (img.complete) {
+
+                resolve();
+
+              } else {
+
+                img.onload = resolve;
+                img.onerror = resolve;
+
+              }
+
+            });
+
+          })
+
+        );
+
+        // tunggu font selesai
         if (document.fonts && document.fonts.ready) {
+
           await document.fonts.ready;
+
         }
 
-        // tunggu gambar selesai load
-        await waitImages(invite);
+        // delay sedikit biar render stabil
+        await new Promise((resolve) => setTimeout(resolve, 300));
 
-        // clone undangan
-        const clone = invite.cloneNode(true);
-
-        // hapus backdrop-filter biar tidak blank putih
-        clone.querySelectorAll('*').forEach((el) => {
-
-          el.style.backdropFilter = 'none';
-          el.style.webkitBackdropFilter = 'none';
-
-          // hentikan animasi
-          el.style.animation = 'none';
-          el.style.transition = 'none';
-
-        });
-
-        // hapus section download di PDF
-        const downloadSection = clone.querySelector('#download');
-
-        if (downloadSection) {
-          downloadSection.remove();
-        }
-
-        // wrapper sementara
-        wrapper = document.createElement('div');
-
-        wrapper.style.background = '#ffffff';
-        wrapper.style.padding = '20px';
-        wrapper.style.width = '1000px';
-        wrapper.style.position = 'absolute';
-        wrapper.style.left = '-99999px';
-        wrapper.style.top = '0';
-
-        wrapper.appendChild(clone);
-
-        document.body.appendChild(wrapper);
-
-        // kasih delay sedikit agar render stabil
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        const opt = {
-
-          margin: [5, 5, 5, 5],
-
-          filename: 'undangan-khitan-khaniq.pdf',
-
-          image: {
-            type: 'jpeg',
-            quality: 1
-          },
-
-          html2canvas: {
-
-            scale: 2,
-
-            useCORS: true,
-
-            allowTaint: true,
-
-            backgroundColor: '#ffffff',
-
-            scrollX: 0,
-            scrollY: 0,
-
-            logging: false,
-
-            windowWidth: 1200
-          },
-
-          jsPDF: {
-            unit: 'mm',
-            format: 'a4',
-            orientation: 'portrait'
-          }
-
-        };
-
-        await html2pdf()
-          .set(opt)
-          .from(wrapper)
-          .save();
-
-        showToast('PDF berhasil diunduh ✅');
+        // buka print browser
+        window.print();
 
       } catch (err) {
 
         console.error(err);
 
-        showToast('Gagal membuat PDF');
+        showToast('Gagal membuka PDF');
 
       } finally {
 
-        if (wrapper && wrapper.parentNode) {
-          wrapper.parentNode.removeChild(wrapper);
-        }
-
         downloadBtn.disabled = false;
+
         downloadBtn.setAttribute('aria-busy', 'false');
+
       }
 
     });
@@ -1116,7 +1069,9 @@
   const HIDE_AT_TOP_Y = 12;
 
   function clamp(n, min, max) {
+
     return Math.min(max, Math.max(min, n));
+
   }
 
   function getFabRect() {
@@ -1179,7 +1134,9 @@
           typeof pos.left === 'number' &&
           typeof pos.top === 'number'
         ) {
+
           setFabPos(pos.left, pos.top, false);
+
         }
 
       }
@@ -1193,9 +1150,13 @@
     if (!waFab) return;
 
     if (visible) {
+
       waFab.classList.add('is-visible');
+
     } else {
+
       waFab.classList.remove('is-visible');
+
     }
 
   }
@@ -1203,9 +1164,13 @@
   function isClosed() {
 
     try {
+
       return localStorage.getItem(STORAGE_CLOSED) === '1';
+
     } catch (e) {
+
       return false;
+
     }
 
   }
@@ -1213,7 +1178,12 @@
   function setClosed(flag) {
 
     try {
-      localStorage.setItem(STORAGE_CLOSED, flag ? '1' : '0');
+
+      localStorage.setItem(
+        STORAGE_CLOSED,
+        flag ? '1' : '0'
+      );
+
     } catch (e) {}
 
   }
@@ -1227,14 +1197,17 @@
     if (scrollY <= HIDE_AT_TOP_Y) {
 
       setFabVisible(false);
+
       setClosed(false);
 
       return;
+
     }
 
     if (scrollY > SHOW_AFTER_Y && !isClosed()) {
 
       setFabVisible(true);
+
       restoreFabPos();
 
     } else {
@@ -1264,7 +1237,11 @@
       ? `https://wa.me/${phone}?text=${encodeURIComponent(fullMsg)}`
       : `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(fullMsg)}`;
 
-    window.open(waLink, '_blank', 'noopener,noreferrer');
+    window.open(
+      waLink,
+      '_blank',
+      'noopener,noreferrer'
+    );
 
   }
 
@@ -1293,6 +1270,7 @@
       e.stopPropagation();
 
       setClosed(true);
+
       setFabVisible(false);
 
     });
@@ -1354,7 +1332,9 @@
       waFab.classList.add('is-dragging');
 
       try {
+
         waFab.setPointerCapture(dragState.pointerId);
+
       } catch (e) {}
 
     }
@@ -1386,7 +1366,9 @@
       window.setTimeout(() => {
 
         if (waFab) {
+
           delete waFab.dataset.justDragged;
+
         }
 
       }, 250);
@@ -1399,11 +1381,25 @@
 
   if (waFab) {
 
-    waFab.addEventListener('pointerdown', onPointerDown);
-    waFab.addEventListener('pointermove', onPointerMove);
+    waFab.addEventListener(
+      'pointerdown',
+      onPointerDown
+    );
 
-    waFab.addEventListener('pointerup', onPointerUp);
-    waFab.addEventListener('pointercancel', onPointerUp);
+    waFab.addEventListener(
+      'pointermove',
+      onPointerMove
+    );
+
+    waFab.addEventListener(
+      'pointerup',
+      onPointerUp
+    );
+
+    waFab.addEventListener(
+      'pointercancel',
+      onPointerUp
+    );
 
   }
 
@@ -1416,6 +1412,7 @@
   window.addEventListener('resize', () => {
 
     restoreFabPos();
+
     updateWaVisibility();
 
   });
