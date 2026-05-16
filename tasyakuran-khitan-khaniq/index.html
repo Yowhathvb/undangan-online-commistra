@@ -887,7 +887,7 @@
       if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     }
 
-    // PDF download — memperbaiki bug halaman putih dengan clone elemen yang lebih baik
+    // PDF download — cegah "halaman putih" (tunggu layout + fonts + images sebelum render)
     const downloadBtn = document.getElementById('btnDownloadPdf');
     const invite = document.getElementById('invite');
     const toast = document.getElementById('toast');
@@ -903,11 +903,12 @@
       downloadBtn.addEventListener('click', async () => {
         downloadBtn.setAttribute('aria-busy', 'true');
         downloadBtn.disabled = true;
+        let wrapper = null;
+        const originalOverflow = document.body.style.overflow;
         try {
           if (typeof html2pdf !== 'undefined') {
             showToast('Memproses undangan ke PDF...');
             // Clone elemen agar style tidak terpengaruh dan background terangkum
-            const originalOverflow = document.body.style.overflow;
             document.body.style.overflow = 'auto';
             const cloneSheet = invite.cloneNode(true);
             cloneSheet.style.backgroundColor = '#ffffff';
@@ -916,20 +917,65 @@
             cloneSheet.style.margin = '0 auto';
             cloneSheet.style.width = '100%';
             cloneSheet.style.maxWidth = '1000px';
-            const wrapper = document.createElement('div');
+            // Paksa semua gambar agar ikut ter-render (hindari lazy loading saat clone)
+            const imgs = cloneSheet.querySelectorAll('img');
+            for (let i = 0; i < imgs.length; i++) {
+              imgs[i].loading = 'eager';
+              imgs[i].decoding = 'async';
+              imgs[i].referrerPolicy = 'no-referrer';
+              // Untuk jaga-jaga kalau nanti asset dipindah domain
+              if (!imgs[i].crossOrigin) imgs[i].crossOrigin = 'anonymous';
+            }
+            wrapper = document.createElement('div');
             wrapper.style.padding = '20px';
             wrapper.style.backgroundColor = '#ffffff';
+            wrapper.style.position = 'absolute';
+            wrapper.style.left = '0';
+            wrapper.style.top = '0';
+            wrapper.style.width = '100%';
+            wrapper.style.zIndex = '9999';
             wrapper.appendChild(cloneSheet);
             document.body.appendChild(wrapper);
+
+            // Tunggu fonts (FontAwesome) & render cycle, supaya html2canvas tidak "blank"
+            try {
+              if (document.fonts && document.fonts.ready) await document.fonts.ready;
+            } catch (e) {}
+            await new Promise(requestAnimationFrame);
+
+            // Tunggu gambar selesai decode/load
+            const wrapperImgs = wrapper.querySelectorAll('img');
+            const imgPromises = [];
+            for (let i = 0; i < wrapperImgs.length; i++) {
+              const img = wrapperImgs[i];
+              imgPromises.push(
+                (async () => {
+                  try {
+                    if (img.decode) await img.decode();
+                    else if (!img.complete) await new Promise((r) => { img.onload = img.onerror = r; });
+                  } catch (e) {
+                    if (!img.complete) await new Promise((r) => { img.onload = img.onerror = r; });
+                  }
+                })()
+              );
+            }
+            await Promise.all(imgPromises);
+            await new Promise((r) => setTimeout(r, 30));
+
             const opt = {
               margin: [8, 8, 8, 8],
               filename: 'undangan-khitan-khaniq.pdf',
-              html2canvas: { scale: 2.5, backgroundColor: '#ffffff', useCORS: true, logging: false },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+              html2canvas: {
+                scale: Math.min(2, window.devicePixelRatio || 1.5),
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                allowTaint: true,
+                logging: false
+              },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+              pagebreak: { mode: ['css', 'legacy'] }
             };
             await html2pdf().set(opt).from(wrapper).save();
-            document.body.removeChild(wrapper);
-            document.body.style.overflow = originalOverflow;
             showToast('PDF berhasil diunduh ✅');
           } else {
             showToast('Membuka dialog cetak (Save as PDF)');
@@ -940,6 +986,10 @@
           showToast('Menggunakan cetak sebagai cadangan');
           window.print();
         } finally {
+          try {
+            if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+          } catch (e) {}
+          document.body.style.overflow = originalOverflow;
           downloadBtn.disabled = false;
           downloadBtn.setAttribute('aria-busy', 'false');
         }
