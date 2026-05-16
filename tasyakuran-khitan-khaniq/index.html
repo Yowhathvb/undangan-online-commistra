@@ -5,13 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light">
   <title>Undangan Tasyakuran Khitan — Muhammad Khaniq Faedhurrohman (Khaniq)</title>
-  <meta name="description" content="Undangan Tasyakuran Khitan: Muhammad Khaniq Faedhurrohman (Khaniq). Jum'at, 29 Mei 2026 pukul 11.00 - selesai.">
+  <meta name="description" content="Undangan Tasyakuran Khitan: Muhammad Khaniq Faedhurrohman (Khaniq). Jum'at, 29 Mei 2026 pukul 10.00 - selesai.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Undangan Tasyakuran Khitan — Muhammad Khaniq Faedhurrohman">
-  <meta property="og:description" content="Jum'at, 29 Mei 2026 • 11.00 - selesai • Jl. Gunung Kawi RT 08 RW 01 Blubuk - Kec. Dukuhwaru">
+  <meta property="og:description" content="Jum'at, 29 Mei 2026 • 10.00 - selesai • Jl. Gunung Kawi RT 08 RW 01 Blubuk - Kec. Dukuhwaru">
   <meta property="og:image" content="khaniq.png">
   <meta property="og:locale" content="id_ID">
   <meta name="theme-color" content="#0B6B3A">
+
+  <!-- Font Awesome 6 (free library) untuk ikon masjid dan lainnya -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
   <style>
     * {
@@ -59,20 +62,67 @@
       overflow-x: clip;
     }
 
-    .pattern {
+    /* CORAK BACKGROUND DENGAN BANYAK IKON MASJID (LOOPING) */
+    .pattern-mosques {
       position: absolute;
-      inset: -80px -80px auto -80px;
-      height: 480px;
-      width: calc(100% + 160px);
+      inset: 0;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
-      opacity: 0.2;
-      filter: saturate(1.15);
+      overflow: hidden;
+      z-index: 0;
+      opacity: 0.3;
+    }
+
+    .pattern-mosques i {
+      position: absolute;
+      font-size: 2.4rem;
+      color: var(--nu-green);
+      opacity: 0.45;
+      filter: blur(0.4px);
+      transition: all 0.2s ease;
+      animation: floatIcon 22s infinite ease-in-out;
+    }
+
+    /* lebih banyak ikon dengan posisi tersebar */
+    .pattern-mosques i:nth-child(1) { top: 5%; left: 3%; font-size: 3rem; animation-delay: 0s; }
+    .pattern-mosques i:nth-child(2) { top: 18%; left: 18%; font-size: 2.2rem; animation-delay: 2s; }
+    .pattern-mosques i:nth-child(3) { top: 35%; left: 8%; font-size: 2.8rem; animation-delay: 4s; }
+    .pattern-mosques i:nth-child(4) { top: 70%; left: 12%; font-size: 2.5rem; animation-delay: 1s; }
+    .pattern-mosques i:nth-child(5) { top: 88%; left: 5%; font-size: 2rem; animation-delay: 3s; }
+    .pattern-mosques i:nth-child(6) { top: 12%; right: 6%; font-size: 3.2rem; animation-delay: 0.5s; }
+    .pattern-mosques i:nth-child(7) { top: 45%; right: 15%; font-size: 2.6rem; animation-delay: 2.5s; }
+    .pattern-mosques i:nth-child(8) { top: 62%; right: 4%; font-size: 3rem; animation-delay: 1.8s; }
+    .pattern-mosques i:nth-child(9) { top: 82%; right: 20%; font-size: 2.3rem; animation-delay: 4.2s; }
+    .pattern-mosques i:nth-child(10) { top: 25%; right: 28%; font-size: 2rem; animation-delay: 3.3s; }
+    .pattern-mosques i:nth-child(11) { bottom: 12%; left: 35%; font-size: 2.7rem; animation-delay: 2.2s; }
+    .pattern-mosques i:nth-child(12) { top: 52%; left: 70%; font-size: 2.4rem; animation-delay: 1.2s; }
+    .pattern-mosques i:nth-child(13) { top: 78%; right: 55%; font-size: 2.1rem; animation-delay: 3.8s; }
+    .pattern-mosques i:nth-child(14) { top: 8%; left: 45%; font-size: 2rem; animation-delay: 4.5s; }
+    .pattern-mosques i:nth-child(15) { bottom: 30%; left: 82%; font-size: 2.9rem; animation-delay: 0.9s; }
+    .pattern-mosques i:nth-child(16) { top: 48%; left: 88%; font-size: 2.2rem; animation-delay: 1.7s; }
+
+    @keyframes floatIcon {
+      0% { transform: translateY(0px) rotate(0deg); opacity: 0.35; }
+      50% { transform: translateY(-14px) rotate(4deg); opacity: 0.65; }
+      100% { transform: translateY(0px) rotate(0deg); opacity: 0.35; }
+    }
+
+    /* efek bintik halus */
+    .bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(2px 2px at 20% 45%, rgba(11,107,58,0.1) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
     }
 
     .container {
       width: min(100% - 32px, var(--container));
       margin: 0 auto;
       position: relative;
+      z-index: 10;
       padding: 24px 0 56px;
     }
 
@@ -104,10 +154,19 @@
       width: 46px;
       height: 46px;
       border-radius: 26px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(145deg, rgba(11, 107, 58, 0.12), rgba(11, 107, 58, 0.02));
+      overflow: hidden;
+      background: rgba(11, 107, 58, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       border: 1px solid rgba(11, 107, 58, 0.2);
+    }
+
+    .mark-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
     .brand h1 {
@@ -166,10 +225,12 @@
     .sheet {
       border-radius: var(--radius-xl);
       border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(2px);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(1px);
       box-shadow: var(--shadow);
       overflow: hidden;
+      position: relative;
+      z-index: 2;
     }
 
     .hero-media {
@@ -180,7 +241,6 @@
       text-align: center;
     }
 
-    /* FOTO LINGKARAN */
     .avatar-circle {
       display: flex;
       justify-content: center;
@@ -475,7 +535,6 @@
       transform: translateX(-50%) translateY(-2px);
     }
 
-    /* WhatsApp FAB - bisa digeser */
     .wa-fab {
       position: fixed;
       right: 18px;
@@ -570,12 +629,12 @@
     }
 
     @media print {
-      .topbar, nav { display: none !important; }
-      .pattern { display: none !important; }
+      .topbar, nav, .pattern-mosques { display: none !important; }
       .container { padding: 0 !important; width: 100% !important; }
-      .sheet { box-shadow: none !important; border: none !important; }
+      .sheet { box-shadow: none !important; border: none !important; background: white !important; }
       .wa-fab, .toast { display: none !important; }
       #download { display: none !important; }
+      .bg::after { display: none; }
     }
 
     @media (max-width: 760px) {
@@ -610,41 +669,44 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .chip, .btn, .avatar-img {
+      .chip, .btn, .avatar-img, .pattern-mosques i {
         transition: none;
+        animation: none;
       }
     }
   </style>
 </head>
 <body>
 <div class="bg">
-  <svg class="pattern" viewBox="0 0 1200 520" preserveAspectRatio="none" aria-hidden="true">
-    <defs>
-      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#0B6B3A" stop-opacity="0.6"/>
-        <stop offset="1" stop-color="#0F7A42" stop-opacity="0.2"/>
-      </linearGradient>
-      <pattern id="p" width="72" height="72" patternUnits="userSpaceOnUse">
-        <path d="M36 6 L56 18 L56 38 L36 58 L16 38 L16 18 Z" fill="none" stroke="url(#g)" stroke-width="1.8" opacity="0.7"/>
-        <circle cx="36" cy="36" r="5" fill="url(#g)" opacity="0.7"/>
-      </pattern>
-    </defs>
-    <rect x="0" y="0" width="1200" height="520" fill="url(#p)"/>
-    <path d="M1100 140c-80 48-148 28-200-18 42 78 32 168-58 226 126-28 208-96 258-208z" fill="url(#g)" opacity="0.35"/>
-    <path d="M180 110c70 52 132 54 196 24-40 76-28 162 72 218-136-10-232-74-268-242z" fill="url(#g)" opacity="0.18"/>
-  </svg>
+  <!-- CORAK BACKGROUND DENGAN BANYAK IKON MASJID (16+ buah) -->
+  <div class="pattern-mosques" aria-hidden="true">
+    <i class="fas fa-mosque"></i>
+    <i class="fas fa-star-and-crescent"></i>
+    <i class="fas fa-mosque"></i>
+    <i class="fas fa-star-and-crescent"></i>
+    <i class="fas fa-mosque"></i>
+    <i class="fas fa-mosque"></i>
+    <i class="fas fa-star-and-crescent"></i>
+    <i class="fas fa-mosque"></i>
+    <i class="fas fa-star-and-crescent"></i>
+    <i class="fas fa-mosque"></i>
+    <i class="fas fa-star-and-crescent"></i>
+    <i class="fas fa-mosque"></i>
+    <i class="fas fa-star-and-crescent"></i>
+    <i class="fas fa-mosque"></i>
+    <i class="fas fa-mosque"></i>
+    <i class="fas fa-star-and-crescent"></i>
+  </div>
 
   <div class="container">
     <div class="topbar" role="banner">
       <div class="brand">
         <div class="mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
-            <path d="M12 2c1.6 2.9 4.6 4.3 8 4.7-1.6 2.4-2 5.5-1 8.4-2.8-1.5-5.9-1.5-7 1.9-1.1-3.4-4.2-3.4-7-1.9 1-2.9.6-6-1-8.4 3.4-.4 6.4-1.8 8-4.7z" stroke="currentColor" stroke-width="1.5" color="#0B6B3A" fill="none"/>
-          </svg>
+          <img class="mark-img" src="khaniq.png" alt="khaniq" loading="eager">
         </div>
         <div>
           <h1>Undangan Tasyakuran Khitan</h1>
-          <small>Jum'at, 29 Mei 2026 • 11.00 - selesai</small>
+          <small>Jum'at, 29 Mei 2026 • 10.00 - selesai</small>
         </div>
       </div>
       <nav aria-label="Navigasi">
@@ -670,7 +732,7 @@
             <img class="avatar-img" src="khaniq.png" alt="Muhammad Khaniq Faedhurrohman (Khaniq)" loading="eager" decoding="async">
           </div>
           <div class="hero-title">
-            <span class="badge">Undangan</span>
+            <span class="badge"><i class="fas fa-mosque" style="margin-right: 6px;"></i> Undangan</span>
             <h2>Tasyakuran Khitan</h2>
             <p>Assalamu'alaikum Warahmatullahi Wabarakatuh. Dengan memohon rahmat dan ridha Allah SWT, kami mengundang Bapak/Ibu/Saudara/i untuk berkenan hadir pada acara tasyakuran khitan putra kami.</p>
           </div>
@@ -709,7 +771,7 @@
               </div>
               <div>
                 <b>Pukul</b>
-                <span>11.00 WIB - selesai</span>
+                <span>10.00 WIB - selesai</span>
               </div>
             </div>
             <div class="row" role="listitem">
@@ -791,12 +853,11 @@
   </div>
 </div>
 
-<!-- WhatsApp Floating Action Button + Drag + Nomor +62 857-1278-5586 -->
 <div class="wa-fab" id="waFab" aria-label="WhatsApp">
   <div class="wa-fab-inner">
     <button class="wa-close" id="waFabClose" type="button" aria-label="Tutup">✕</button>
     <button class="wa-btn" id="waFabBtn" type="button" aria-label="Chat WhatsApp">
-      <img class="wa-icon" src="wa.png" alt="" width="34" height="34" loading="eager" decoding="async" draggable="false">
+      <img class="wa-icon" src="wa.png" alt="WhatsApp" width="34" height="34" loading="eager" decoding="async" draggable="false">
     </button>
   </div>
 </div>
@@ -826,7 +887,7 @@
       if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     }
 
-    // PDF download
+    // PDF download — memperbaiki bug halaman putih dengan clone elemen yang lebih baik
     const downloadBtn = document.getElementById('btnDownloadPdf');
     const invite = document.getElementById('invite');
     const toast = document.getElementById('toast');
@@ -835,29 +896,57 @@
       toast.textContent = msg;
       toast.classList.add('show');
       if (window._toastTimer) clearTimeout(window._toastTimer);
-      window._toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+      window._toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
     }
-    if (downloadBtn) {
+
+    if (downloadBtn && invite) {
       downloadBtn.addEventListener('click', async () => {
-        if (!invite) return;
         downloadBtn.setAttribute('aria-busy', 'true');
         downloadBtn.disabled = true;
         try {
           if (typeof html2pdf !== 'undefined') {
-            const opt = { margin: [10, 10, 10, 10], filename: 'undangan-khitan-khaniq.pdf', html2canvas: { scale: 2, backgroundColor: '#ffffff' }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-            showToast('Menyiapkan PDF...');
-            await html2pdf().set(opt).from(invite).save();
-            showToast('PDF berhasil diunduh.');
+            showToast('Memproses undangan ke PDF...');
+            // Clone elemen agar style tidak terpengaruh dan background terangkum
+            const originalOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'auto';
+            const cloneSheet = invite.cloneNode(true);
+            cloneSheet.style.backgroundColor = '#ffffff';
+            cloneSheet.style.borderRadius = '0px';
+            cloneSheet.style.backdropFilter = 'none';
+            cloneSheet.style.margin = '0 auto';
+            cloneSheet.style.width = '100%';
+            cloneSheet.style.maxWidth = '1000px';
+            const wrapper = document.createElement('div');
+            wrapper.style.padding = '20px';
+            wrapper.style.backgroundColor = '#ffffff';
+            wrapper.appendChild(cloneSheet);
+            document.body.appendChild(wrapper);
+            const opt = {
+              margin: [8, 8, 8, 8],
+              filename: 'undangan-khitan-khaniq.pdf',
+              html2canvas: { scale: 2.5, backgroundColor: '#ffffff', useCORS: true, logging: false },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            await html2pdf().set(opt).from(wrapper).save();
+            document.body.removeChild(wrapper);
+            document.body.style.overflow = originalOverflow;
+            showToast('PDF berhasil diunduh ✅');
           } else {
-            showToast('Membuka dialog cetak...');
+            showToast('Membuka dialog cetak (Save as PDF)');
             window.print();
           }
-        } catch(e) { showToast('Cetak/Save as PDF dibuka.'); window.print(); }
-        finally { downloadBtn.disabled = false; downloadBtn.setAttribute('aria-busy', 'false'); }
+        } catch(e) {
+          console.warn(e);
+          showToast('Menggunakan cetak sebagai cadangan');
+          window.print();
+        } finally {
+          downloadBtn.disabled = false;
+          downloadBtn.setAttribute('aria-busy', 'false');
+        }
       });
     }
 
-    // WhatsApp FAB dengan drag & nomor +6285712785586
+    // WhatsApp FAB +62 857-1278-5586 (tanpa perubahan)
     const waFab = document.getElementById('waFab');
     const waBtn = document.getElementById('waFabBtn');
     const waClose = document.getElementById('waFabClose');
@@ -909,21 +998,13 @@
       else setFabVisible(false);
     }
 
-    // WhatsApp redirect +62 857-1278-5586 (mobile & desktop)
     function openWhatsApp() {
-      const phone = '6285712785586';  // format internasional tanpa '+'
+      const phone = '6285712785586';
       const message = 'Assalamu’alaikum, saya ingin konfirmasi kehadiran untuk acara tasyakuran khitan putra Bapak/Ibu Nurkhasan.';
       const url = window.location.href;
       const fullMsg = `${message} (${url})`;
-      // Deteksi mobile: pake wa.me agar otomatis redirect ke aplikasi, fallback web
       const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      let waLink = '';
-      if (isMobile) {
-        waLink = `https://wa.me/${phone}?text=${encodeURIComponent(fullMsg)}`;
-      } else {
-        // desktop: WhatsApp Web
-        waLink = `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(fullMsg)}`;
-      }
+      let waLink = isMobile ? `https://wa.me/${phone}?text=${encodeURIComponent(fullMsg)}` : `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(fullMsg)}`;
       window.open(waLink, '_blank', 'noopener,noreferrer');
     }
 
@@ -934,7 +1015,6 @@
     });
     if (waClose) waClose.addEventListener('click', (e) => { e.stopPropagation(); setClosed(true); setFabVisible(false); });
 
-    // Drag logic
     let dragState = null;
     const DRAG_THRESHOLD = 12;
     function onPointerDown(e) {
@@ -960,7 +1040,6 @@
       if (!dragState.dragging) {
         if (dist < DRAG_THRESHOLD) return;
         dragState.dragging = true;
-        dragState.moved = true;
         waFab.classList.add('is-dragging');
         try { waFab.setPointerCapture(dragState.pointerId); } catch(e) {}
       }
