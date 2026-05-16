@@ -23,6 +23,13 @@
       box-sizing: border-box;
     }
 
+    @media print {
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
     :root {
       --nu-green: #0B6B3A;
       --nu-green-2: #0F7A42;
@@ -232,6 +239,9 @@
       position: relative;
       z-index: 2;
     }
+    .sheet {
+  backdrop-filter: none;
+}
 
     .hero-media {
       background: radial-gradient(800px 280px at 20% 20%, rgba(11, 107, 58, 0.06), transparent 70%),
@@ -867,256 +877,552 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <script>
-  (function() {
-    // Smooth scroll anchor
-    const anchorLinks = document.querySelectorAll('a[href^="#"]');
-    for (let i = 0; i < anchorLinks.length; i++) {
-      anchorLinks[i].addEventListener('click', function(e) {
-        const hash = this.getAttribute('href');
-        if (!hash || hash === '#') return;
-        const targetElem = document.querySelector(hash);
-        if (targetElem) {
-          e.preventDefault();
-          targetElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          history.pushState(null, '', hash);
-        }
-      });
-    }
-    if (window.location.hash) {
-      const target = document.querySelector(window.location.hash);
-      if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-    }
+(function () {
 
-    // PDF download — cegah "halaman putih" (tunggu layout + fonts + images sebelum render)
-    const downloadBtn = document.getElementById('btnDownloadPdf');
-    const invite = document.getElementById('invite');
-    const toast = document.getElementById('toast');
-    function showToast(msg) {
-      if (!toast) return;
-      toast.textContent = msg;
-      toast.classList.add('show');
-      if (window._toastTimer) clearTimeout(window._toastTimer);
-      window._toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
-    }
+  // =========================
+  // SMOOTH SCROLL
+  // =========================
 
-    if (downloadBtn && invite) {
-      downloadBtn.addEventListener('click', async () => {
-        downloadBtn.setAttribute('aria-busy', 'true');
-        downloadBtn.disabled = true;
-        let wrapper = null;
-        const originalOverflow = document.body.style.overflow;
-        try {
-          if (typeof html2pdf !== 'undefined') {
-            showToast('Memproses undangan ke PDF...');
-            // Clone elemen agar style tidak terpengaruh dan background terangkum
-            document.body.style.overflow = 'auto';
-            const cloneSheet = invite.cloneNode(true);
-            cloneSheet.style.backgroundColor = '#ffffff';
-            cloneSheet.style.borderRadius = '0px';
-            cloneSheet.style.backdropFilter = 'none';
-            cloneSheet.style.margin = '0 auto';
-            cloneSheet.style.width = '100%';
-            cloneSheet.style.maxWidth = '1000px';
-            // Paksa semua gambar agar ikut ter-render (hindari lazy loading saat clone)
-            const imgs = cloneSheet.querySelectorAll('img');
-            for (let i = 0; i < imgs.length; i++) {
-              imgs[i].loading = 'eager';
-              imgs[i].decoding = 'async';
-              imgs[i].referrerPolicy = 'no-referrer';
-              // Untuk jaga-jaga kalau nanti asset dipindah domain
-              if (!imgs[i].crossOrigin) imgs[i].crossOrigin = 'anonymous';
-            }
-            wrapper = document.createElement('div');
-            wrapper.style.padding = '20px';
-            wrapper.style.backgroundColor = '#ffffff';
-            wrapper.style.position = 'absolute';
-            wrapper.style.left = '0';
-            wrapper.style.top = '0';
-            wrapper.style.width = '100%';
-            wrapper.style.zIndex = '9999';
-            wrapper.appendChild(cloneSheet);
-            document.body.appendChild(wrapper);
+  const anchorLinks = document.querySelectorAll('a[href^="#"]');
 
-            // Tunggu fonts (FontAwesome) & render cycle, supaya html2canvas tidak "blank"
-            try {
-              if (document.fonts && document.fonts.ready) await document.fonts.ready;
-            } catch (e) {}
-            await new Promise(requestAnimationFrame);
+  for (let i = 0; i < anchorLinks.length; i++) {
+    anchorLinks[i].addEventListener('click', function (e) {
 
-            // Tunggu gambar selesai decode/load
-            const wrapperImgs = wrapper.querySelectorAll('img');
-            const imgPromises = [];
-            for (let i = 0; i < wrapperImgs.length; i++) {
-              const img = wrapperImgs[i];
-              imgPromises.push(
-                (async () => {
-                  try {
-                    if (img.decode) await img.decode();
-                    else if (!img.complete) await new Promise((r) => { img.onload = img.onerror = r; });
-                  } catch (e) {
-                    if (!img.complete) await new Promise((r) => { img.onload = img.onerror = r; });
-                  }
-                })()
-              );
-            }
-            await Promise.all(imgPromises);
-            await new Promise((r) => setTimeout(r, 30));
+      const hash = this.getAttribute('href');
 
-            const opt = {
-              margin: [8, 8, 8, 8],
-              filename: 'undangan-khitan-khaniq.pdf',
-              html2canvas: {
-                scale: Math.min(2, window.devicePixelRatio || 1.5),
-                backgroundColor: '#ffffff',
-                useCORS: true,
-                allowTaint: true,
-                logging: false
-              },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-              pagebreak: { mode: ['css', 'legacy'] }
-            };
-            await html2pdf().set(opt).from(wrapper).save();
-            showToast('PDF berhasil diunduh ✅');
-          } else {
-            showToast('Membuka dialog cetak (Save as PDF)');
-            window.print();
-          }
-        } catch(e) {
-          console.warn(e);
-          showToast('Menggunakan cetak sebagai cadangan');
-          window.print();
-        } finally {
-          try {
-            if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
-          } catch (e) {}
-          document.body.style.overflow = originalOverflow;
-          downloadBtn.disabled = false;
-          downloadBtn.setAttribute('aria-busy', 'false');
-        }
-      });
-    }
+      if (!hash || hash === '#') return;
 
-    // WhatsApp FAB +62 857-1278-5586 (tanpa perubahan)
-    const waFab = document.getElementById('waFab');
-    const waBtn = document.getElementById('waFabBtn');
-    const waClose = document.getElementById('waFabClose');
-    const STORAGE_POS = 'wa_fab_pos_v2';
-    const STORAGE_CLOSED = 'wa_fab_closed_v2';
-    const SHOW_AFTER_Y = 140;
-    const HIDE_AT_TOP_Y = 12;
+      const targetElem = document.querySelector(hash);
 
-    function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
-    function getFabRect() { return waFab ? waFab.getBoundingClientRect() : { width: 64, height: 64 }; }
-    function setFabPos(left, top, persist = true) {
-      if (!waFab) return;
-      const rect = getFabRect();
-      const maxLeft = window.innerWidth - rect.width - 10;
-      const maxTop = window.innerHeight - rect.height - 10;
-      const finalLeft = clamp(left, 10, Math.max(10, maxLeft));
-      const finalTop = clamp(top, 10, Math.max(10, maxTop));
-      waFab.style.left = finalLeft + 'px';
-      waFab.style.top = finalTop + 'px';
-      waFab.style.right = 'auto';
-      waFab.style.bottom = 'auto';
-      if (persist) {
-        try { localStorage.setItem(STORAGE_POS, JSON.stringify({ left: finalLeft, top: finalTop })); } catch(e) {}
+      if (targetElem) {
+        e.preventDefault();
+
+        targetElem.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+
+        history.pushState(null, '', hash);
       }
-    }
-    function restoreFabPos() {
-      if (!waFab) return;
-      try {
-        const raw = localStorage.getItem(STORAGE_POS);
-        if (raw) {
-          const pos = JSON.parse(raw);
-          if (typeof pos.left === 'number' && typeof pos.top === 'number') setFabPos(pos.left, pos.top, false);
-        }
-      } catch(e) {}
-    }
-    function setFabVisible(visible) {
-      if (!waFab) return;
-      if (visible) waFab.classList.add('is-visible');
-      else waFab.classList.remove('is-visible');
-    }
-    function isClosed() { try { return localStorage.getItem(STORAGE_CLOSED) === '1'; } catch(e) { return false; } }
-    function setClosed(flag) { try { localStorage.setItem(STORAGE_CLOSED, flag ? '1' : '0'); } catch(e) {} }
-
-    function updateWaVisibility() {
-      if (!waFab) return;
-      const scrollY = window.scrollY || window.pageYOffset;
-      if (scrollY <= HIDE_AT_TOP_Y) { setFabVisible(false); setClosed(false); return; }
-      if (scrollY > SHOW_AFTER_Y && !isClosed()) { setFabVisible(true); restoreFabPos(); }
-      else setFabVisible(false);
-    }
-
-    function openWhatsApp() {
-      const phone = '6285712785586';
-      const message = 'Assalamu’alaikum, saya ingin konfirmasi kehadiran untuk acara tasyakuran khitan putra Bapak/Ibu Nurkhasan.';
-      const url = window.location.href;
-      const fullMsg = `${message} (${url})`;
-      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      let waLink = isMobile ? `https://wa.me/${phone}?text=${encodeURIComponent(fullMsg)}` : `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(fullMsg)}`;
-      window.open(waLink, '_blank', 'noopener,noreferrer');
-    }
-
-    if (waBtn) waBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (waFab && waFab.dataset && waFab.dataset.justDragged === '1') return;
-      openWhatsApp();
     });
-    if (waClose) waClose.addEventListener('click', (e) => { e.stopPropagation(); setClosed(true); setFabVisible(false); });
+  }
 
-    let dragState = null;
-    const DRAG_THRESHOLD = 12;
-    function onPointerDown(e) {
-      if (!waFab || e.button === 2) return;
-      const target = e.target;
-      if (target && (target.closest?.('#waFabClose') || target.closest?.('.wa-close'))) return;
+  if (window.location.hash) {
+    const target = document.querySelector(window.location.hash);
+
+    if (target) {
+      setTimeout(() => {
+        target.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }, 100);
+    }
+  }
+
+
+  // =========================
+  // TOAST
+  // =========================
+
+  const toast = document.getElementById('toast');
+
+  function showToast(msg) {
+
+    if (!toast) return;
+
+    toast.textContent = msg;
+    toast.classList.add('show');
+
+    clearTimeout(window._toastTimer);
+
+    window._toastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2500);
+  }
+
+
+  // =========================
+  // WAIT IMAGES
+  // =========================
+
+  async function waitImages(container) {
+
+    const images = container.querySelectorAll('img');
+
+    await Promise.all(
+      [...images].map((img) => {
+
+        return new Promise((resolve) => {
+
+          if (img.complete) {
+            resolve();
+          } else {
+            img.onload = resolve;
+            img.onerror = resolve;
+          }
+
+        });
+
+      })
+    );
+  }
+
+
+  // =========================
+  // PDF DOWNLOAD
+  // =========================
+
+  const downloadBtn = document.getElementById('btnDownloadPdf');
+  const invite = document.getElementById('invite');
+
+  if (downloadBtn && invite) {
+
+    downloadBtn.addEventListener('click', async () => {
+
+      let wrapper = null;
+
+      try {
+
+        downloadBtn.disabled = true;
+        downloadBtn.setAttribute('aria-busy', 'true');
+
+        showToast('Sedang membuat PDF...');
+
+        // tunggu font selesai load
+        if (document.fonts && document.fonts.ready) {
+          await document.fonts.ready;
+        }
+
+        // tunggu gambar selesai load
+        await waitImages(invite);
+
+        // clone undangan
+        const clone = invite.cloneNode(true);
+
+        // hapus backdrop-filter biar tidak blank putih
+        clone.querySelectorAll('*').forEach((el) => {
+
+          el.style.backdropFilter = 'none';
+          el.style.webkitBackdropFilter = 'none';
+
+          // hentikan animasi
+          el.style.animation = 'none';
+          el.style.transition = 'none';
+
+        });
+
+        // hapus section download di PDF
+        const downloadSection = clone.querySelector('#download');
+
+        if (downloadSection) {
+          downloadSection.remove();
+        }
+
+        // wrapper sementara
+        wrapper = document.createElement('div');
+
+        wrapper.style.background = '#ffffff';
+        wrapper.style.padding = '20px';
+        wrapper.style.width = '1000px';
+        wrapper.style.position = 'absolute';
+        wrapper.style.left = '-99999px';
+        wrapper.style.top = '0';
+
+        wrapper.appendChild(clone);
+
+        document.body.appendChild(wrapper);
+
+        // kasih delay sedikit agar render stabil
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        const opt = {
+
+          margin: [5, 5, 5, 5],
+
+          filename: 'undangan-khitan-khaniq.pdf',
+
+          image: {
+            type: 'jpeg',
+            quality: 1
+          },
+
+          html2canvas: {
+
+            scale: 2,
+
+            useCORS: true,
+
+            allowTaint: true,
+
+            backgroundColor: '#ffffff',
+
+            scrollX: 0,
+            scrollY: 0,
+
+            logging: false,
+
+            windowWidth: 1200
+          },
+
+          jsPDF: {
+            unit: 'mm',
+            format: 'a4',
+            orientation: 'portrait'
+          }
+
+        };
+
+        await html2pdf()
+          .set(opt)
+          .from(wrapper)
+          .save();
+
+        showToast('PDF berhasil diunduh ✅');
+
+      } catch (err) {
+
+        console.error(err);
+
+        showToast('Gagal membuat PDF');
+
+      } finally {
+
+        if (wrapper && wrapper.parentNode) {
+          wrapper.parentNode.removeChild(wrapper);
+        }
+
+        downloadBtn.disabled = false;
+        downloadBtn.setAttribute('aria-busy', 'false');
+      }
+
+    });
+
+  }
+
+
+  // =========================
+  // WHATSAPP FAB
+  // =========================
+
+  const waFab = document.getElementById('waFab');
+  const waBtn = document.getElementById('waFabBtn');
+  const waClose = document.getElementById('waFabClose');
+
+  const STORAGE_POS = 'wa_fab_pos_v2';
+  const STORAGE_CLOSED = 'wa_fab_closed_v2';
+
+  const SHOW_AFTER_Y = 140;
+  const HIDE_AT_TOP_Y = 12;
+
+  function clamp(n, min, max) {
+    return Math.min(max, Math.max(min, n));
+  }
+
+  function getFabRect() {
+
+    return waFab
+      ? waFab.getBoundingClientRect()
+      : { width: 64, height: 64 };
+
+  }
+
+  function setFabPos(left, top, persist = true) {
+
+    if (!waFab) return;
+
+    const rect = getFabRect();
+
+    const maxLeft = window.innerWidth - rect.width - 10;
+    const maxTop = window.innerHeight - rect.height - 10;
+
+    const finalLeft = clamp(left, 10, Math.max(10, maxLeft));
+    const finalTop = clamp(top, 10, Math.max(10, maxTop));
+
+    waFab.style.left = finalLeft + 'px';
+    waFab.style.top = finalTop + 'px';
+
+    waFab.style.right = 'auto';
+    waFab.style.bottom = 'auto';
+
+    if (persist) {
+
+      try {
+
+        localStorage.setItem(
+          STORAGE_POS,
+          JSON.stringify({
+            left: finalLeft,
+            top: finalTop
+          })
+        );
+
+      } catch (e) {}
+
+    }
+
+  }
+
+  function restoreFabPos() {
+
+    if (!waFab) return;
+
+    try {
+
+      const raw = localStorage.getItem(STORAGE_POS);
+
+      if (raw) {
+
+        const pos = JSON.parse(raw);
+
+        if (
+          typeof pos.left === 'number' &&
+          typeof pos.top === 'number'
+        ) {
+          setFabPos(pos.left, pos.top, false);
+        }
+
+      }
+
+    } catch (e) {}
+
+  }
+
+  function setFabVisible(visible) {
+
+    if (!waFab) return;
+
+    if (visible) {
+      waFab.classList.add('is-visible');
+    } else {
+      waFab.classList.remove('is-visible');
+    }
+
+  }
+
+  function isClosed() {
+
+    try {
+      return localStorage.getItem(STORAGE_CLOSED) === '1';
+    } catch (e) {
+      return false;
+    }
+
+  }
+
+  function setClosed(flag) {
+
+    try {
+      localStorage.setItem(STORAGE_CLOSED, flag ? '1' : '0');
+    } catch (e) {}
+
+  }
+
+  function updateWaVisibility() {
+
+    if (!waFab) return;
+
+    const scrollY = window.scrollY || window.pageYOffset;
+
+    if (scrollY <= HIDE_AT_TOP_Y) {
+
+      setFabVisible(false);
+      setClosed(false);
+
+      return;
+    }
+
+    if (scrollY > SHOW_AFTER_Y && !isClosed()) {
+
+      setFabVisible(true);
+      restoreFabPos();
+
+    } else {
+
+      setFabVisible(false);
+
+    }
+
+  }
+
+  function openWhatsApp() {
+
+    const phone = '6285712785586';
+
+    const message =
+      'Assalamu’alaikum, saya ingin konfirmasi kehadiran untuk acara tasyakuran khitan putra Bapak/Ibu Nurkhasan.';
+
+    const url = window.location.href;
+
+    const fullMsg = `${message} (${url})`;
+
+    const isMobile =
+      /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+      .test(navigator.userAgent);
+
+    let waLink = isMobile
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(fullMsg)}`
+      : `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(fullMsg)}`;
+
+    window.open(waLink, '_blank', 'noopener,noreferrer');
+
+  }
+
+  if (waBtn) {
+
+    waBtn.addEventListener('click', (e) => {
+
+      e.stopPropagation();
+
+      if (
+        waFab &&
+        waFab.dataset &&
+        waFab.dataset.justDragged === '1'
+      ) return;
+
+      openWhatsApp();
+
+    });
+
+  }
+
+  if (waClose) {
+
+    waClose.addEventListener('click', (e) => {
+
+      e.stopPropagation();
+
+      setClosed(true);
+      setFabVisible(false);
+
+    });
+
+  }
+
+  let dragState = null;
+
+  const DRAG_THRESHOLD = 12;
+
+  function onPointerDown(e) {
+
+    if (!waFab || e.button === 2) return;
+
+    const target = e.target;
+
+    if (
+      target &&
+      (
+        target.closest?.('#waFabClose') ||
+        target.closest?.('.wa-close')
+      )
+    ) return;
+
+    const rect = waFab.getBoundingClientRect();
+
+    dragState = {
+
+      startX: e.clientX,
+      startY: e.clientY,
+
+      startLeft: rect.left,
+      startTop: rect.top,
+
+      moved: false,
+      dragging: false,
+
+      pointerId: e.pointerId
+
+    };
+
+  }
+
+  function onPointerMove(e) {
+
+    if (!dragState || !waFab) return;
+
+    const dx = e.clientX - dragState.startX;
+    const dy = e.clientY - dragState.startY;
+
+    const dist = Math.abs(dx) + Math.abs(dy);
+
+    if (!dragState.dragging) {
+
+      if (dist < DRAG_THRESHOLD) return;
+
+      dragState.dragging = true;
+
+      waFab.classList.add('is-dragging');
+
+      try {
+        waFab.setPointerCapture(dragState.pointerId);
+      } catch (e) {}
+
+    }
+
+    e.preventDefault();
+
+    setFabPos(
+      dragState.startLeft + dx,
+      dragState.startTop + dy,
+      false
+    );
+
+  }
+
+  function onPointerUp() {
+
+    if (!dragState || !waFab) return;
+
+    if (dragState.dragging) {
+
+      waFab.classList.remove('is-dragging');
+
       const rect = waFab.getBoundingClientRect();
-      dragState = {
-        startX: e.clientX,
-        startY: e.clientY,
-        startLeft: rect.left,
-        startTop: rect.top,
-        moved: false,
-        dragging: false,
-        pointerId: e.pointerId
-      };
+
+      setFabPos(rect.left, rect.top, true);
+
+      waFab.dataset.justDragged = '1';
+
+      window.setTimeout(() => {
+
+        if (waFab) {
+          delete waFab.dataset.justDragged;
+        }
+
+      }, 250);
+
     }
-    function onPointerMove(e) {
-      if (!dragState || !waFab) return;
-      const dx = e.clientX - dragState.startX;
-      const dy = e.clientY - dragState.startY;
-      const dist = Math.abs(dx) + Math.abs(dy);
-      if (!dragState.dragging) {
-        if (dist < DRAG_THRESHOLD) return;
-        dragState.dragging = true;
-        waFab.classList.add('is-dragging');
-        try { waFab.setPointerCapture(dragState.pointerId); } catch(e) {}
-      }
-      e.preventDefault();
-      setFabPos(dragState.startLeft + dx, dragState.startTop + dy, false);
-    }
-    function onPointerUp(e) {
-      if (!dragState || !waFab) return;
-      if (dragState.dragging) {
-        waFab.classList.remove('is-dragging');
-        const rect = waFab.getBoundingClientRect();
-        setFabPos(rect.left, rect.top, true);
-        waFab.dataset.justDragged = '1';
-        window.setTimeout(() => { if (waFab) delete waFab.dataset.justDragged; }, 250);
-      }
-      dragState = null;
-    }
-    if (waFab) {
-      waFab.addEventListener('pointerdown', onPointerDown);
-      waFab.addEventListener('pointermove', onPointerMove);
-      waFab.addEventListener('pointerup', onPointerUp);
-      waFab.addEventListener('pointercancel', onPointerUp);
-    }
-    window.addEventListener('scroll', updateWaVisibility, { passive: true });
-    window.addEventListener('resize', () => { restoreFabPos(); updateWaVisibility(); });
+
+    dragState = null;
+
+  }
+
+  if (waFab) {
+
+    waFab.addEventListener('pointerdown', onPointerDown);
+    waFab.addEventListener('pointermove', onPointerMove);
+
+    waFab.addEventListener('pointerup', onPointerUp);
+    waFab.addEventListener('pointercancel', onPointerUp);
+
+  }
+
+  window.addEventListener(
+    'scroll',
+    updateWaVisibility,
+    { passive: true }
+  );
+
+  window.addEventListener('resize', () => {
+
+    restoreFabPos();
     updateWaVisibility();
-  })();
+
+  });
+
+  updateWaVisibility();
+
+})();
 </script>
 </body>
 </html>
